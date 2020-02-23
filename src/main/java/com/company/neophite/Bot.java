@@ -1,5 +1,6 @@
 package com.company.neophite;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -63,8 +64,8 @@ public class Bot extends TelegramLongPollingBot {
     private static StringBuilder toStringPath(List<NodeOfPath> nodesOfPath) {
         StringBuilder string = new StringBuilder();
         for (int itter = nodesOfPath.size() - 1; itter > 0; itter--) {
-            string.append(":top: " + '\n');
-            string.append("Дата : " + nodesOfPath.get(itter).getDate() + '\n' + "Нахождение : " + nodesOfPath.get(itter).getInfo());
+            string.append(EmojiParser.parseToUnicode(":arrow_down:"));
+            string.append(EmojiParser.parseToUnicode(":clock10:") + nodesOfPath.get(itter).getDate() + '\n' + "Нахождение : " + nodesOfPath.get(itter).getInfo() + '\n');
         }
         return string;
     }
