@@ -13,7 +13,6 @@ public class Bot extends TelegramLongPollingBot {
     @Override
     public String getBotUsername() {
         return "remindOrder_bot";
-        //возвращаем юзера
     }
 
     @Override
@@ -23,8 +22,7 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return "1016593055:AAFoAAA4FATZraQamWNUMJWE2lryKlRPFLg";
-        //Токен бота
+        return System.getenv("token");
     }
 
 }
