@@ -1,38 +1,28 @@
 package com.company.neophite;
 
 import com.vdurmont.emoji.EmojiParser;
-import org.telegram.telegrambots.ApiContextInitializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.company.neophite.DataParser.getFullPath;
 
+@Component
+@PropertySource("classpath:bot.properties")
 public class Bot extends TelegramLongPollingBot {
 
+    @Value("${bot.name}")
+    private String botName;
 
-    public static void main(String[] args) {
-        ApiContextInitializer.init();
-        TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
-        try {
-            telegramBotsApi.registerBot(new Bot());
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-
-
-    }
-
-    @Override
-    public String getBotUsername() {
-        return "remindOrder_bot";
-    }
+    @Value("${bot.tok}")
+    private String token;
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -41,6 +31,16 @@ public class Bot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public String getBotUsername() {
+        return getBot();
+    }
+
+    @Override
+    public String getBotToken() {
+        return getToken();
     }
 
     private void sendMsg(Message message) throws TelegramApiException {
@@ -56,18 +56,20 @@ public class Bot extends TelegramLongPollingBot {
         return System.getenv("siteUrlFirst");
     }
 
-    @Override
-    public String getBotToken() {
-        return System.getenv("token");
-    }
-
     private static StringBuilder toStringPath(List<NodeOfPath> nodesOfPath) {
         StringBuilder string = new StringBuilder();
         for (int itter = nodesOfPath.size() - 1; itter > 0; itter--) {
             string.append(EmojiParser.parseToUnicode(":arrow_down:"));
-            string.append(EmojiParser.parseToUnicode(":clock10:") + nodesOfPath.get(itter).getDate() + '\n' + "Нахождение : " + nodesOfPath.get(itter).getInfo() + '\n');
+            string.append(EmojiParser.parseToUnicode(":clock10:") + nodesOfPath.get(itter).getDate() + '\n' + "**Нахождение :** " + nodesOfPath.get(itter).getInfo() + '\n');
         }
         return string;
     }
 
+    public String getBot() {
+        return this.botName;
+    }
+
+    public String getToken() {
+        return this.token;
+    }
 }
