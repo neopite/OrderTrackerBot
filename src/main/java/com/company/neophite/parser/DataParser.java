@@ -1,4 +1,4 @@
-package com.company.neophite;
+package com.company.neophite.parser;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

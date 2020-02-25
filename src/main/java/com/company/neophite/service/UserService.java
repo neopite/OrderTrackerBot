@@ -2,6 +2,7 @@ package com.company.neophite.service;
 
 import com.company.neophite.entity.User;
 import com.company.neophite.repos.UserRepo;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ public class UserService implements UserServiceInterface {
 
     private UserRepo userRepo;
 
+    @Autowired
     public UserService(UserRepo userRepo) {
         this.userRepo = userRepo;
     }
@@ -19,8 +21,11 @@ public class UserService implements UserServiceInterface {
         return userRepo.save(user);
     }
 
+
+
     @Override
-    public User findByChatId(int chatId) {
-        return userRepo.findUserByChatId(chatId);
+    public void updateUser(User oldUser, User newUser) {
+        BeanUtils.copyProperties(newUser, oldUser);
+        userRepo.save(oldUser);
     }
 }

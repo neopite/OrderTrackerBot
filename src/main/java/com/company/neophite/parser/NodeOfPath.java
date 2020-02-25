@@ -1,4 +1,4 @@
-package com.company.neophite;
+package com.company.neophite.parser;
 
 import java.util.ArrayList;
 
