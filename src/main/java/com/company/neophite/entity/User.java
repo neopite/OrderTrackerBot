@@ -14,11 +14,19 @@ public class User {
     private Long id;
     private String username;
 
+    @Column(name = "first_name")
+    private String name;
+
+    @Column(name = "second_name")
+    private String surnmae;
+
     public User() {
     }
 
-    public User(String username) {
+    public User(String username, String name, String surnmae) {
         this.username = username;
+        this.name = name;
+        this.surnmae = surnmae;
     }
 
     @OneToMany
@@ -37,7 +45,7 @@ public class User {
         this.username = username;
     }
 
-    public void setUsersOrder(Order order){
+    public void setUsersOrder(Order order) {
         this.usersOrders.add(order);
     }
 
@@ -53,5 +61,19 @@ public class User {
         this.id = id;
     }
 
+    public String getName() {
+        return name;
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getSurnmae() {
+        return surnmae;
+    }
+
+    public void setSurnmae(String surnmae) {
+        this.surnmae = surnmae;
+    }
 }

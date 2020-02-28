@@ -47,18 +47,17 @@ public class Bot extends TelegramLongPollingBot {
         BotContxt botContxt = new BotContxt();
         User currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
         if(currentUser==null){
-            currentUser = new User(update.getMessage().getFrom().getUserName());
+            currentUser = new User(
+                    update.getMessage().getFrom().getUserName(),
+                    update.getMessage().getFrom().getFirstName(),
+                    update.getMessage().getFrom().getLastName());
             userRepo.save(currentUser);
         }
         botContxt.setContext(this, update.getMessage().getChatId(),currentUser);
         if (update.getMessage().hasText()) {
             if(update.getMessage().getText().startsWith("/orders")){
-                SendMessage sendMessage = new SendMessage();
-                sendMessage.enableMarkdown(true);
-                sendMessage.setChatId(botContxt.getCharId());
-                sendMessage.setText(botContxt.getCurrentUser().getUsersOrders().toString());
                 try {
-                    execute(sendMessage);
+                    sendMsg(update.getMessage(),botContxt.getCurrentUser().getUsersOrders().toString());
                 } catch (TelegramApiException e) {
                     e.printStackTrace();
                 }
@@ -71,7 +70,7 @@ public class Bot extends TelegramLongPollingBot {
             userServiceInterface.updateUser(currentUser , botContxt.getCurrentUser());
             } else {
                 try {
-                    sendMsg(update.getMessage());
+                    sendMsg(update.getMessage() , toStringPath(getFullPath(update.getMessage().getText(), returnUrl())).toString());
                 } catch (TelegramApiException e) {
                     e.printStackTrace();
                 }
@@ -89,11 +88,11 @@ public class Bot extends TelegramLongPollingBot {
         return getToken();
     }
 
-    private void sendMsg(Message message) throws TelegramApiException {
+    private void sendMsg(Message message,String text) throws TelegramApiException {
         SendMessage mes = new SendMessage();
         mes.enableMarkdown(true);
         mes.setChatId(message.getChatId().toString());
-        mes.setText(toStringPath(getFullPath(message.getText(), returnUrl())).toString());
+        mes.setText(text);
         execute(mes);
 
     }
