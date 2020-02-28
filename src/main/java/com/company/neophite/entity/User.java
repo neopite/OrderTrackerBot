@@ -1,6 +1,7 @@
 package com.company.neophite.entity;
 
 import javax.persistence.*;
+import java.awt.print.Book;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -18,7 +19,7 @@ public class User {
     private String name;
 
     @Column(name = "second_name")
-    private String surnmae;
+    private String surname;
 
     public User() {
     }
@@ -26,16 +27,15 @@ public class User {
     public User(String username, String name, String surnmae) {
         this.username = username;
         this.name = name;
-        this.surnmae = surnmae;
+        this.surname = surnmae;
     }
 
-    @OneToMany
-    @JoinTable(
-            name = "usersOrders",
-            joinColumns = @JoinColumn(name = "userId"),
-            inverseJoinColumns = @JoinColumn(name = "orderId")
+    @OneToMany(fetch = FetchType.LAZY  , targetEntity = Order.class)
+    @JoinTable(name = "Radom" ,
+            joinColumns = @JoinColumn(name = "suka_id") ,
+            inverseJoinColumns = @JoinColumn (name = "boo_suka")
     )
-    public List<Order> usersOrders = new ArrayList<>();
+    List<Order> orders ;
 
     public String getUsername() {
         return username;
@@ -45,12 +45,16 @@ public class User {
         this.username = username;
     }
 
-    public void setUsersOrder(Order order) {
-        this.usersOrders.add(order);
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
     }
 
-    public List<Order> getUsersOrders() {
-        return usersOrders;
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(Order order) {
+        this.orders.add(order);
     }
 
     public Long getId() {
@@ -69,11 +73,11 @@ public class User {
         this.name = name;
     }
 
-    public String getSurnmae() {
-        return surnmae;
+    public String getSurname() {
+        return surname;
     }
 
-    public void setSurnmae(String surnmae) {
-        this.surnmae = surnmae;
+    public void setSurname(String surnmae) {
+        this.surname = surnmae;
     }
 }

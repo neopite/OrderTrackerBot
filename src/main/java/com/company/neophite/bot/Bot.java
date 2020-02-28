@@ -57,17 +57,16 @@ public class Bot extends TelegramLongPollingBot {
         if (update.getMessage().hasText()) {
             if(update.getMessage().getText().startsWith("/orders")){
                 try {
-                    sendMsg(update.getMessage(),botContxt.getCurrentUser().getUsersOrders().toString());
+                    sendMsg(update.getMessage(),botContxt.getCurrentUser().getOrders().toString());
                 } catch (TelegramApiException e) {
                     e.printStackTrace();
                 }
             }
             if (update.getMessage().getText().startsWith("/set")) {
-            String track = update.getMessage().getText().substring(0,4).trim();
+            String track = update.getMessage().getText().substring(4).trim();
             Order order = new Order(track,false);
             orderRepo.save(order);
-            botContxt.getCurrentUser().setUsersOrder(order);
-            userServiceInterface.updateUser(currentUser , botContxt.getCurrentUser());
+            botContxt.getCurrentUser().setOrders(order);
             } else {
                 try {
                     sendMsg(update.getMessage() , toStringPath(getFullPath(update.getMessage().getText(), returnUrl())).toString());

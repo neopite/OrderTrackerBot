@@ -3,23 +3,24 @@ package com.company.neophite.entity;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "order")
+@Table(name = "orders")
 public class Order {
 
+    @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Id
     private Long id;
+
+    @Column(name = "number")
     private String number;
-    private boolean status;
+
+    @Column(name = "delevered")
+    private boolean delevered;
 
     public Order(String number, boolean status) {
         this.number = number;
-        this.status = status;
+        this.delevered = status;
     }
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    User user;
-
 
     public Long getId() {
         return id;
@@ -33,25 +34,19 @@ public class Order {
         return number;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
 
     public void setNumber(String trackNumber) {
         this.number = trackNumber;
     }
 
-    public boolean isStatus() {
-        return status;
+    public boolean isDelevered() {
+        return delevered;
     }
 
-    public void setStatus(boolean status) {
-        this.status = status;
+    public void setDelevered(boolean delevered) {
+        this.delevered = delevered;
     }
+
 
     @Override
     public String toString() {
