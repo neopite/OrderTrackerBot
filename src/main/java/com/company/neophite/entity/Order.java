@@ -22,6 +22,9 @@ public class Order {
         this.delevered = status;
     }
 
+    public Order() {
+    }
+
     public Long getId() {
         return id;
     }

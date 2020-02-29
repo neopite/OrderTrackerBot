@@ -1,5 +1,6 @@
 package com.company.neophite.parser;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -38,5 +39,15 @@ public class DataParser {
         }
         return document;
     }
+
+    public static StringBuilder toStringPath(List<NodeOfPath> nodesOfPath) {
+        StringBuilder string = new StringBuilder();
+        for (int itter = nodesOfPath.size() - 1; itter > 0; itter--) {
+            string.append(EmojiParser.parseToUnicode(":arrow_down:"));
+            string.append(EmojiParser.parseToUnicode(":clock10:") + nodesOfPath.get(itter).getDate() + '\n' + "**Нахождение :** " + nodesOfPath.get(itter).getInfo() + '\n');
+        }
+        return string;
+    }
+
 
 }

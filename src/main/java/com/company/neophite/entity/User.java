@@ -30,12 +30,15 @@ public class User {
         this.surname = surnmae;
     }
 
-    @OneToMany(fetch = FetchType.LAZY  , targetEntity = Order.class)
+    @OneToMany(fetch = FetchType.EAGER  , targetEntity = Order.class , cascade = {
+            CascadeType.PERSIST,
+            CascadeType.MERGE
+    })
     @JoinTable(name = "Radom" ,
             joinColumns = @JoinColumn(name = "suka_id") ,
             inverseJoinColumns = @JoinColumn (name = "boo_suka")
     )
-    List<Order> orders ;
+    Set<Order> orders ;
 
     public String getUsername() {
         return username;
@@ -45,11 +48,11 @@ public class User {
         this.username = username;
     }
 
-    public void setOrders(List<Order> orders) {
+    public void setOrders(Set<Order> orders) {
         this.orders = orders;
     }
 
-    public List<Order> getOrders() {
+    public Set<Order> getOrders() {
         return orders;
     }
 
