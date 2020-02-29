@@ -34,9 +34,9 @@ public class User {
             CascadeType.PERSIST,
             CascadeType.MERGE
     })
-    @JoinTable(name = "Radom" ,
-            joinColumns = @JoinColumn(name = "suka_id") ,
-            inverseJoinColumns = @JoinColumn (name = "boo_suka")
+    @JoinTable(name = "user_orders" ,
+            joinColumns = @JoinColumn(name = "user_id") ,
+            inverseJoinColumns = @JoinColumn (name = "order_id")
     )
     Set<Order> orders ;
 

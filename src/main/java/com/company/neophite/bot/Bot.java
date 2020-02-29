@@ -14,8 +14,14 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static com.company.neophite.parser.DataParser.getFullPath;
@@ -44,13 +50,25 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        User currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
-        if (currentUser == null) {
-            currentUser = new User(
-                    update.getMessage().getFrom().getUserName(),
-                    update.getMessage().getFrom().getFirstName(),
-                    update.getMessage().getFrom().getLastName());
-            userRepo.save(currentUser);
+        User currentUser = null;
+        if(!update.hasCallbackQuery()) {
+            currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
+            if (currentUser == null) {
+                currentUser = new User(
+                        update.getMessage().getFrom().getUserName(),
+                        update.getMessage().getFrom().getFirstName(),
+                        update.getMessage().getFrom().getLastName());
+                userRepo.save(currentUser);
+            }
+        }
+        if (update.hasCallbackQuery()) {
+            String text = DataParser.toStringPath(getFullPath(update.getCallbackQuery().getData().toString(), returnUrl())).toString();
+            try {
+                execute(new SendMessage().setText(text).setChatId(update.getCallbackQuery().getMessage().getChatId()));
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+            return;
         }
         if (update.getMessage().hasText()) {
             if (update.getMessage().getText().startsWith("/orders")) {
@@ -71,31 +89,37 @@ public class Bot extends TelegramLongPollingBot {
                 }
             }
         }
-    }
+        }
+
 
     public void setOrder(Update update, User currentUser) throws TelegramApiException {
         String track = update.getMessage().getText().substring(4).trim();
         if (orderRepo.findOrderByNumber(track) != null) {
-            sendMsg(update.getMessage(), "Заказ : "+track+" уже состоит в вашем профиле");
+            sendMsg(update.getMessage(), "Заказ : " + track + " уже состоит в вашем профиле");
         } else {
-            Order newOrder = new Order(track , false);
+            Order newOrder = new Order(track, false);
             orderRepo.save(newOrder);
             Set<Order> setOfOrders = currentUser.getOrders();
             setOfOrders.add(newOrder);
             currentUser.setOrders(setOfOrders);
             userServiceInterface.save(currentUser);
-            sendMsg(update.getMessage(), "Заказ : "+track +" успешно привязан за вашим аккаунтом");
+            sendMsg(update.getMessage(), "Заказ : " + track + " успешно привязан за вашим аккаунтом");
 
         }
 
     }
 
     public void getOrders(Update update, User currentUser) {
-        StringBuilder str = new StringBuilder();
-        for(Order s : currentUser.getOrders())
-            str.append(s.getNumber() + " : ");
+        List<InlineKeyboardButton> list = new ArrayList<>();
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        for (Order order : currentUser.getOrders()) {
+            InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton().setText(order.getNumber()).setCallbackData(order.getNumber());
+            list.add(inlineKeyboardButton);
+        }
+        inlineKeyboardMarkup.setKeyboard(Collections.singletonList(list));
+        SendMessage message = new SendMessage().setChatId(update.getMessage().getChatId()).setText("Пример").setReplyMarkup(inlineKeyboardMarkup);
         try {
-            sendMsg(update.getMessage(), str.toString());
+            execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
@@ -118,6 +142,15 @@ public class Bot extends TelegramLongPollingBot {
         mes.setText(text);
         execute(mes);
 
+    }
+    private int  getLastNumbersFromCallBackData(String callBackData){
+        StringBuilder totalNum = new StringBuilder();
+        for (int itter = callBackData.length()-1; itter > 0; itter++) {
+            if(Character.isDigit(callBackData.charAt(itter))){
+                totalNum.insert(0,callBackData.charAt(itter));
+            }
+        }
+        return Integer.parseInt(totalNum.toString());
     }
 
     private String returnUrl() {
