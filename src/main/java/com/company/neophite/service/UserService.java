@@ -5,6 +5,8 @@ import com.company.neophite.repos.UserRepo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 @Service
 public class UserService implements UserServiceInterface {
@@ -22,10 +24,28 @@ public class UserService implements UserServiceInterface {
     }
 
 
-
     @Override
     public void updateUser(User oldUser, User newUser) {
         BeanUtils.copyProperties(newUser, oldUser);
         userRepo.save(oldUser);
     }
+
+    @Override
+    public User saveUserFromCallBack(CallbackQuery callbackQuery) {
+        return userRepo.save(new User(
+                callbackQuery.getFrom().getUserName(),
+                callbackQuery.getFrom().getFirstName(),
+                callbackQuery.getFrom().getLastName())
+        );
+    }
+
+    @Override
+    public User saveUserFromMessage(Message message) {
+        return userRepo.save(new User(
+                message.getFrom().getUserName(),
+                message.getFrom().getFirstName(),
+                message.getFrom().getLastName())
+        );
+    }
 }
+

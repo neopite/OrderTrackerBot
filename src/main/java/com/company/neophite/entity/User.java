@@ -1,9 +1,6 @@
 package com.company.neophite.entity;
 
 import javax.persistence.*;
-import java.awt.print.Book;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -24,10 +21,10 @@ public class User {
     public User() {
     }
 
-    public User(String username, String name, String surnmae) {
+    public User(String username, String name, String surname) {
         this.username = username;
         this.name = name;
-        this.surname = surnmae;
+        this.surname = surname;
     }
 
     @OneToMany(fetch = FetchType.EAGER  , targetEntity = Order.class , cascade = {
