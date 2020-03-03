@@ -3,6 +3,7 @@ package com.company.neophite.bot;
 import com.company.neophite.entity.Order;
 import com.company.neophite.entity.User;
 import com.company.neophite.parser.DataParser;
+import com.company.neophite.parser.model.OrderDetails;
 import com.company.neophite.repos.OrderRepo;
 import com.company.neophite.repos.UserRepo;
 import com.company.neophite.service.UserServiceInterface;
@@ -23,11 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.company.neophite.parser.DataParser.getFullPath;
 
 @Component
 @PropertySource("classpath:bot.properties")
-public class Bot extends TelegramLongPollingBot {
+public class Bot extends TelegramLongPollingBot  {
 
     @Value("${bot.name}")
     private String botName;
@@ -50,10 +50,32 @@ public class Bot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         User currentUser = null;
         if(!update.hasCallbackQuery()) {
-            sendInstruction(update);
-            currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
-            if (currentUser == null) {
-                currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
+            if (update.getMessage().hasText()) {
+                sendInstruction(update);
+                currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
+                if (currentUser == null) {
+                    currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
+                }
+                if (update.getMessage().getText().startsWith("/orders")) {
+                    getOrders(update, currentUser);
+                }
+                if (update.getMessage().getText().startsWith("/set")) {
+                    try {
+                        setOrder(update, currentUser);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+
+                } else {
+                    try {
+                        DataParser dataParser = new DataParser(update.getMessage().getText().toString());
+                        OrderDetails orderDetails = dataParser.generateOrderDetails(update.getMessage().getText().toString());
+                        String text = dataParser.toStringPath(orderDetails).toString();
+                        sendMsg(update.getMessage(), text);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
         if (update.hasCallbackQuery()) {
@@ -61,31 +83,13 @@ public class Bot extends TelegramLongPollingBot {
             if (currentUser == null) {
                 currentUser = userServiceInterface.saveUserFromCallBack(update.getCallbackQuery());
             }
-            String text = DataParser.toStringPath(getFullPath(update.getCallbackQuery().getData().toString(), returnUrl())).toString();
+            DataParser dataParser = new DataParser(update.getCallbackQuery().getData().toString());
+            OrderDetails orderDetails = dataParser.generateOrderDetails(update.getCallbackQuery().getData().toString());
+            String text = dataParser.toStringPath(orderDetails).toString();
             try {
-                execute(new SendMessage().setText(text).setChatId(update.getCallbackQuery().getMessage().getChatId()));
+                execute(new SendMessage().enableMarkdown(true).setText(text).setChatId(update.getCallbackQuery().getMessage().getChatId()));
             } catch (TelegramApiException e) {
                 e.printStackTrace();
-            }
-            return;
-        }
-        if (update.getMessage().hasText()) {
-            if (update.getMessage().getText().startsWith("/orders")) {
-                getOrders(update, currentUser);
-            }
-            if (update.getMessage().getText().startsWith("/set")) {
-                try {
-                    setOrder(update, currentUser);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
-
-            } else {
-                try {
-                    sendMsg(update.getMessage(), DataParser.toStringPath(getFullPath(update.getMessage().getText(), returnUrl())).toString());
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
             }
         }
         }
@@ -165,4 +169,7 @@ public class Bot extends TelegramLongPollingBot {
     private String getToken() {
         return this.token;
     }
+
+
 }
+

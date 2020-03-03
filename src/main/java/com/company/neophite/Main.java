@@ -6,7 +6,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.telegram.telegrambots.ApiContextInitializer;
 
 @SpringBootApplication
-@EnableScheduling
 public class Main {
     public static void main(String[] args) {
         ApiContextInitializer.init();

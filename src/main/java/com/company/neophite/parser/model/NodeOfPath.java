@@ -1,4 +1,4 @@
-package com.company.neophite.parser;
+package com.company.neophite.parser.model;
 
 import java.util.ArrayList;
 
