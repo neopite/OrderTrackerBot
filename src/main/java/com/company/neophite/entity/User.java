@@ -28,8 +28,7 @@ public class User {
     }
 
     @OneToMany(fetch = FetchType.EAGER  , targetEntity = Order.class , cascade = {
-            CascadeType.PERSIST,
-            CascadeType.MERGE
+            CascadeType.REMOVE,
     })
     @JoinTable(name = "user_orders" ,
             joinColumns = @JoinColumn(name = "user_id") ,

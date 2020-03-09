@@ -9,9 +9,5 @@ import java.util.Set;
 
 public interface OrderRepo extends JpaRepository<Order, Long> {
     Order findOrderByNumber(String number);
-
- /*   @Query("select number from orders o inner join radom r on r.suka_id=")
-    Set<Order> getUsersOrders(User user);
-
-  */
+    void deleteById(Long id);
 }

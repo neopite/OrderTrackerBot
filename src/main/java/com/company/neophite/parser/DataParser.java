@@ -45,7 +45,7 @@ public class DataParser {
         String fullPath = aPartOfUrl + trackNumber + API_SECOND_PART_OF_URL;
         Document document = null;
         try {
-            document = Jsoup.connect(fullPath).userAgent("Google Chrome").get();
+            document = Jsoup.connect(fullPath).get();
         } catch (IOException e) {
             e.printStackTrace();
         }
