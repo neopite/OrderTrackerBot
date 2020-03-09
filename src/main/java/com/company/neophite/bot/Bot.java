@@ -49,26 +49,24 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        User currentUser = null;
         if (!update.hasCallbackQuery()) {
             if (update.getMessage().hasText()) {
                 sendInstruction(update);
-                currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
+                User currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
                 if (currentUser == null) {
                     currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
                 }
                 if (update.getMessage().getText().startsWith("/orders")) {
                     getOrders(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/set")) {
-                        setOrder(update, currentUser);
+                    setOrder(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/remove")) {
-                        removeOrder(update,currentUser);
+                    removeOrder(update, currentUser);
                 } else {
                     try {
-                        DataParser dataParser = new DataParser(update.getMessage().getText().toString());
-                        OrderDetails orderDetails = dataParser.generateOrderDetails(update.getMessage().getText().toString());
-                        String text = dataParser.toStringPath(orderDetails).toString();
-                        sendMsg(update.getMessage(), text);
+                        DataParser dataParser = new DataParser(update.getMessage().getText());
+                        OrderDetails orderDetails = dataParser.generateOrderDetails(update.getMessage().getText());
+                        sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails).toString());
                     } catch (TelegramApiException e) {
                         e.printStackTrace();
                     }
@@ -78,21 +76,32 @@ public class Bot extends TelegramLongPollingBot {
         if (update.hasCallbackQuery()) {
             DataParser dataParser = new DataParser(update.getCallbackQuery().getData().toString());
             OrderDetails orderDetails = dataParser.generateOrderDetails(update.getCallbackQuery().getData().toString());
-            String text = dataParser.toStringPath(orderDetails).toString();
             try {
-                execute(new SendMessage().enableMarkdown(true).setChatId(update.getCallbackQuery().getMessage().getChatId()).setText(text));
+                execute(new SendMessage()
+                        .enableMarkdown(true)
+                        .setChatId(update.getCallbackQuery().getMessage().getChatId())
+                        .setText(dataParser.toStringPath(orderDetails).toString()));
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
         }
     }
 
+    @Override
+    public String getBotUsername() {
+        return this.botName;
+    }
+
+    @Override
+    public String getBotToken() {
+        return this.token;
+    }
 
     private void setOrder(Update update, User currentUser) {
         String track = update.getMessage().getText().trim().substring(4);
         if (orderRepo.findOrderByNumber(track) != null) {
             try {
-                sendMsg(update.getMessage(), "Трек-номер : " + track + " уже состоит в вашем профиле");
+                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":exclamation:") + track + " уже состоит в вашем профиле");
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
@@ -104,7 +113,7 @@ public class Bot extends TelegramLongPollingBot {
             currentUser.setOrders(setOfOrders);
             userServiceInterface.save(currentUser);
             try {
-                sendMsg(update.getMessage(), "Трек-номер : " + track + " успешно привязан за вашим аккаунтом");
+                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + track + " успешно привязан за вашим аккаунтом");
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
@@ -115,28 +124,37 @@ public class Bot extends TelegramLongPollingBot {
 
     private void removeOrder(Update update, User currentUser) {
         String orderId = update.getMessage().getText().trim().substring(7);
-        for(Order order : currentUser.getOrders()){
-            if(order.getId()==Long.parseLong(orderId)){
+        for (Order order : currentUser.getOrders()) {
+            if (order.getId() == Long.parseLong(orderId)) {
                 currentUser.getOrders().remove(order);
                 userServiceInterface.save(currentUser);
+                break;
             }
         }
         orderRepo.deleteById(Long.parseLong(orderId));
         try {
-            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:")+" Трекинг-номер удалён!");
+            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + " Трекинг-номер удалён!");
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
     private void getOrders(Update update, User currentUser) {
+        if (currentUser.getOrders().isEmpty()) {
+            try {
+                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":clipboard:") + "*Трек лист* пустой!");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
         List<InlineKeyboardButton> list = new ArrayList<>();
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("*Трек лист* \n\n");
+        stringBuilder.append(EmojiParser.parseToUnicode(":clipboard:") + "*Трек лист* \n\n");
         for (Order order : currentUser.getOrders()) {
             InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton().setText(order.getNumber()).setCallbackData(order.getNumber().trim());
-            stringBuilder.append(EmojiParser.parseToUnicode(":package:") + " " + order.getNumber() +" . Удалить трек-номер - " +" /remove"+""+order.getId().toString()+'\n');
+            stringBuilder.append(EmojiParser.parseToUnicode(":package:") + " " + order.getNumber() + " . Удалить трек-номер - " + " /remove" + "" + order.getId().toString() + '\n');
             list.add(inlineKeyboardButton);
         }
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(list));
@@ -159,16 +177,6 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    @Override
-    public String getBotUsername() {
-        return getBot();
-    }
-
-    @Override
-    public String getBotToken() {
-        return getToken();
-    }
-
     private void sendMsg(Message message, String text) throws TelegramApiException {
         SendMessage mes = new SendMessage();
         mes.enableMarkdown(true);
@@ -177,19 +185,6 @@ public class Bot extends TelegramLongPollingBot {
         execute(mes);
 
     }
-
-    private String returnUrl() {
-        return System.getenv("siteUrlFirst");
-    }
-
-    private String getBot() {
-        return this.botName;
-    }
-
-    private String getToken() {
-        return this.token;
-    }
-
 
 }
 

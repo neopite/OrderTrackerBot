@@ -12,6 +12,19 @@ public class OrderDetails {
     private String arrivalTime;
     private List<NodeOfPath> pathList;
 
+    public OrderDetails() {
+    }
+
+    public OrderDetails(String from, String to, String orderService, String weight, int onTheWay, String arrivalTime, List<NodeOfPath> pathList) {
+        this.from = from;
+        this.to = to;
+        this.orderService = orderService;
+        this.weight = weight;
+        this.onTheWay = onTheWay;
+        this.arrivalTime = arrivalTime;
+        this.pathList = pathList;
+    }
+
     public String getFrom() {
         return from;
     }

@@ -18,7 +18,6 @@ import java.util.List;
 public class DataParser {
     private static final String API_SECOND_PART_OF_URL = "?smartyBMode=2&_pjax=%23tracking-page";
     private Document document;
-    private OrderDetails orderDetails = null;
     private static String secondLink = System.getenv("siteUrlFirst");
 
     public DataParser(String trackNumber) {
@@ -37,7 +36,6 @@ public class DataParser {
             String info = infoElements.get(itter).text();
             arrayListOfPathNodes.add(new NodeOfPath(date, info, postSerivice));
         }
-        orderDetails.setPathList(arrayListOfPathNodes);
         return arrayListOfPathNodes;
     }
 
@@ -53,26 +51,24 @@ public class DataParser {
     }
 
     public OrderDetails generateOrderDetails(String trackNumber) {
-        Document document = this.document;
-        orderDetails = new OrderDetails();
-        orderDetails.setPathList(getFullPath(trackNumber, document));
-        List<String> ar = getInfoAboutOrder(document);
-        orderDetails.setFrom(ar.get(0));
-        orderDetails.setOrderService(ar.get(1));
-        orderDetails.setTo(ar.get(2));
-        orderDetails.setWeight(ar.get(3));
-        orderDetails.setOnTheWay(Integer.parseInt(ar.get(4)));
-        orderDetails.setArrivalTime(ar.get(5));
-        return orderDetails;
+        List<String> ar = getInfoAboutOrder(this.document);
+        return new OrderDetails(
+                 ar.get(0),      //From country
+                 ar.get(2),      //To country
+                 ar.get(1),      //Order service
+                 ar.get(3),      //Order weight
+                 Integer.parseInt(ar.get(4)), //Time on the way
+                 ar.get(5),      //ArrivalTime
+                 getFullPath(trackNumber, document));
     }
 
     public StringBuilder toStringPath(OrderDetails orderDetails) {
-        StringBuilder string = new StringBuilder();
+        StringBuilder totalOrderPath = new StringBuilder();
         for (int itter = orderDetails.getPathList().size() - 1; itter > 0; itter--) {
-            string.append(EmojiParser.parseToUnicode(":arrow_down:"));
-            string.append(EmojiParser.parseToUnicode(":clock10:") + orderDetails.getPathList().get(itter).getDate() + '\n' + " **Нахождение**" + orderDetails.getPathList().get(itter).getInfo() + '\n');
+            totalOrderPath.append(EmojiParser.parseToUnicode(":arrow_down:"));
+            totalOrderPath.append(EmojiParser.parseToUnicode(":clock10:")).append(orderDetails.getPathList().get(itter).getDate()).append('\n').append(" **Нахождение**").append(orderDetails.getPathList().get(itter).getInfo()).append('\n');
         }
-        return string;
+        return totalOrderPath;
     }
 
     public List<String> getInfoAboutOrder(Document document) {
@@ -95,7 +91,4 @@ public class DataParser {
         return document.select("div.package-info-delivery");
     }
 
-    public OrderDetails getOrderDetails() {
-        return orderDetails;
-    }
 }
