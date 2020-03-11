@@ -5,11 +5,8 @@ import com.company.neophite.parser.model.OrderDetails;
 import com.vdurmont.emoji.EmojiParser;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Value;
 
-import javax.print.Doc;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +15,10 @@ import java.util.List;
 public class DataParser {
     private static final String API_SECOND_PART_OF_URL = "?smartyBMode=2&_pjax=%23tracking-page";
     private Document document;
-    private static String secondLink = System.getenv("siteUrlFirst");
+    private static String firstPartOfLink = System.getenv("siteUrlFirst");
 
     public DataParser(String trackNumber) {
-        this.document = getOrderPageByTrackNumber(trackNumber, secondLink);
+        this.document = getOrderPageByTrackNumber(trackNumber, firstPartOfLink);
 
     }
 

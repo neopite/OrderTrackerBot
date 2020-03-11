@@ -63,13 +63,9 @@ public class Bot extends TelegramLongPollingBot {
                 } else if (update.getMessage().getText().startsWith("/remove")) {
                     removeOrder(update, currentUser);
                 } else {
-                    try {
-                        DataParser dataParser = new DataParser(update.getMessage().getText());
-                        OrderDetails orderDetails = dataParser.generateOrderDetails(update.getMessage().getText());
-                        sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails).toString());
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                    }
+                    DataParser dataParser = new DataParser(update.getMessage().getText());
+                    OrderDetails orderDetails = dataParser.generateOrderDetails(update.getMessage().getText());
+                    sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails).toString());
                 }
             }
         }
@@ -100,11 +96,7 @@ public class Bot extends TelegramLongPollingBot {
     private void setOrder(Update update, User currentUser) {
         String track = update.getMessage().getText().trim().substring(4);
         if (orderRepo.findOrderByNumber(track) != null) {
-            try {
-                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":exclamation:") + track + " уже состоит в вашем профиле");
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":exclamation:") + track + " уже состоит в вашем профиле");
         } else {
             Order newOrder = new Order(track, false);
             orderRepo.save(newOrder);
@@ -112,12 +104,7 @@ public class Bot extends TelegramLongPollingBot {
             setOfOrders.add(newOrder);
             currentUser.setOrders(setOfOrders);
             userServiceInterface.save(currentUser);
-            try {
-                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + track + " успешно привязан за вашим аккаунтом");
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-
+            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + track + " успешно привязан за вашим аккаунтом");
         }
 
     }
@@ -132,33 +119,39 @@ public class Bot extends TelegramLongPollingBot {
             }
         }
         orderRepo.deleteById(Long.parseLong(orderId));
-        try {
-            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + " Трекинг-номер удалён!");
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + " Трекинг-номер удалён!");
     }
 
     private void getOrders(Update update, User currentUser) {
         if (currentUser.getOrders().isEmpty()) {
-            try {
-                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":clipboard:") + "*Трек лист* пустой!");
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":clipboard:") + "*Трек лист* пустой!");
             return;
         }
         List<InlineKeyboardButton> list = new ArrayList<>();
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(EmojiParser.parseToUnicode(":clipboard:") + "*Трек лист* \n\n");
+        StringBuilder usersOrdersMenu = new StringBuilder();
+        usersOrdersMenu.append(EmojiParser.parseToUnicode(":clipboard:")).append("*Трек лист* \n\n");
         for (Order order : currentUser.getOrders()) {
             InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton().setText(order.getNumber()).setCallbackData(order.getNumber().trim());
-            stringBuilder.append(EmojiParser.parseToUnicode(":package:") + " " + order.getNumber() + " . Удалить трек-номер - " + " /remove" + "" + order.getId().toString() + '\n');
+            usersOrdersMenu.append(EmojiParser.parseToUnicode(":package:")).append(" ").append(order.getNumber()).append(" . Удалить трек-номер - ").append(" /remove").append(order.getId().toString()).append('\n');
             list.add(inlineKeyboardButton);
         }
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(list));
-        SendMessage message = new SendMessage().setChatId(update.getMessage().getChatId()).setText(stringBuilder.toString()).setReplyMarkup(inlineKeyboardMarkup).enableMarkdown(true);
+       getOrdersSendInlineKeyboardButtonsAndList(update,usersOrdersMenu,inlineKeyboardMarkup);
+    }
+
+    private void sendInstruction(Update update) {
+        if (update.getMessage().getText().equals("/start")) {
+            sendMsg(update.getMessage(), "Установить с помощью команды кто`/set` и через Пробел трек-номер которые ты хочешь отслеживать(они будут закреплены за вами). " + '\n' + "С Изи кпомощью команды `/orders ` вы можете получить все трек-номера ваших поссылок и отслеживать их онлайн");
+        }
+    }
+
+    private void getOrdersSendInlineKeyboardButtonsAndList(Update update, StringBuilder menu, InlineKeyboardMarkup keyboardListOrders) {
+        SendMessage message = new SendMessage()
+                .setChatId(update.getMessage().getChatId())
+                .setText(menu.toString())
+                .setReplyMarkup(keyboardListOrders)
+                .enableMarkdown(true);
         try {
             execute(message);
         } catch (TelegramApiException e) {
@@ -166,23 +159,16 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    public void sendInstruction(Update update) {
-        if (update.getMessage().getText().equals("/start")) {
-            try {
-                sendMsg(update.getMessage(), "Установить с помощью команды кто`/set` и через Пробел трек-номер которые ты хочешь отслеживать(они будут закреплены за вами). " + '\n' + "С Изи кпомощью команды `/orders ` вы можете получить все трек-номера ваших поссылок и отслеживать их онлайн");
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-            return;
-        }
-    }
-
-    private void sendMsg(Message message, String text) throws TelegramApiException {
+    private void sendMsg(Message message, String text) {
         SendMessage mes = new SendMessage();
         mes.enableMarkdown(true);
         mes.setChatId(message.getChatId().toString());
         mes.setText(text);
-        execute(mes);
+        try {
+            execute(mes);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
 
     }
 
