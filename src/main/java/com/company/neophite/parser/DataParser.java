@@ -28,10 +28,9 @@ public class DataParser {
         Elements infoElements = document.select("div.package-route-info");
 
         for (int itter = 1; itter <= dateElements.size() - 1; itter++) {
-            String postSerivice = infoElements.get(itter).select("div.package-route-post-service").text();
             String date = dateElements.get(itter).text();
             String info = infoElements.get(itter).text();
-            arrayListOfPathNodes.add(new NodeOfPath(date, info, postSerivice));
+            arrayListOfPathNodes.add(new NodeOfPath(date, info));
         }
         return arrayListOfPathNodes;
     }
@@ -59,11 +58,11 @@ public class DataParser {
                  getFullPath( document));
     }
 
-    public String toStringPath(OrderDetails orderDetails) {
+    public String toStringPath(List<NodeOfPath> listOfPath) {
         StringBuilder totalOrderPath = new StringBuilder();
-        for (int itter = orderDetails.getPathList().size() - 1; itter > 0; itter--) {
+        for (int itter = listOfPath.size()-1; itter > 0; itter--) {
             totalOrderPath.append(EmojiParser.parseToUnicode(":arrow_down:"));
-            totalOrderPath.append(EmojiParser.parseToUnicode(":clock10:")).append(orderDetails.getPathList().get(itter).getDate()).append('\n').append(" **Нахождение**").append(orderDetails.getPathList().get(itter).getInfo()).append('\n');
+            totalOrderPath.append(EmojiParser.parseToUnicode(":clock10:")).append(listOfPath.get(itter).getDate()).append('\n').append("*Нахождение* : ").append(listOfPath.get(itter).getInfo()).append('\n');
         }
         return totalOrderPath.toString();
     }
