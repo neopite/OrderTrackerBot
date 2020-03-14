@@ -7,6 +7,7 @@ import com.company.neophite.parser.model.OrderDetails;
 import com.company.neophite.repos.OrderRepo;
 import com.company.neophite.repos.UserRepo;
 import com.company.neophite.service.UserServiceInterface;
+import com.company.neophite.validation.Validator;
 import com.vdurmont.emoji.EmojiParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -64,22 +65,16 @@ public class Bot extends TelegramLongPollingBot {
                     removeOrder(update, currentUser);
                 } else {
                     DataParser dataParser = new DataParser(update.getMessage().getText());
-                    OrderDetails orderDetails = dataParser.generateOrderDetails(update.getMessage().getText());
-                    sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails).toString());
+                    OrderDetails orderDetails = dataParser.generateOrderDetails();
+                    sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails));
                 }
             }
         }
-        if (update.hasCallbackQuery()) {
-            DataParser dataParser = new DataParser(update.getCallbackQuery().getData().toString());
-            OrderDetails orderDetails = dataParser.generateOrderDetails(update.getCallbackQuery().getData().toString());
-            try {
-                execute(new SendMessage()
-                        .enableMarkdown(true)
-                        .setChatId(update.getCallbackQuery().getMessage().getChatId())
-                        .setText(dataParser.toStringPath(orderDetails).toString()));
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+        else if (update.hasCallbackQuery()) {
+            DataParser dataParser = new DataParser(update.getCallbackQuery().getData());
+            OrderDetails orderDetails = dataParser.generateOrderDetails();
+            sendMsg(update.getCallbackQuery().getMessage(), dataParser.toStringPath(orderDetails));
+
         }
     }
 
@@ -94,19 +89,25 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void setOrder(Update update, User currentUser) {
-        String track = update.getMessage().getText().trim().substring(4);
-        if (orderRepo.findOrderByNumber(track) != null) {
-            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":exclamation:") + track + " уже состоит в вашем профиле");
-        } else {
-            Order newOrder = new Order(track, false);
-            orderRepo.save(newOrder);
-            Set<Order> setOfOrders = currentUser.getOrders();
-            setOfOrders.add(newOrder);
-            currentUser.setOrders(setOfOrders);
-            userServiceInterface.save(currentUser);
-            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + track + " успешно привязан за вашим аккаунтом");
+        String track = update.getMessage().getText().trim().substring(4).trim();
+        if(Validator.validate(track)) {
+         if (orderRepo.findOrderByNumber(track) != null) {
+                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":exclamation:") + track + " уже состоит в вашем профиле");
+            } else {
+                Order newOrder = new Order(track, false);
+                orderRepo.save(newOrder);
+                Set<Order> setOfOrders = currentUser.getOrders();
+                setOfOrders.add(newOrder);
+                currentUser.setOrders(setOfOrders);
+                userServiceInterface.save(currentUser);
+                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + track + " успешно привязан за вашим аккаунтом");
+            }
+        }else{
+            sendMsg(update.getMessage(),EmojiParser.parseToUnicode(":xте:")
+                    +" Неверный формат трек-номера "
+                    +'\n'
+                    +EmojiParser.parseToUnicode(":white_check_mark:")+" Коректный Формат : XX000000000XX");
         }
-
     }
 
     private void removeOrder(Update update, User currentUser) {
@@ -133,16 +134,22 @@ public class Bot extends TelegramLongPollingBot {
         usersOrdersMenu.append(EmojiParser.parseToUnicode(":clipboard:")).append("*Трек лист* \n\n");
         for (Order order : currentUser.getOrders()) {
             InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton().setText(order.getNumber()).setCallbackData(order.getNumber().trim());
-            usersOrdersMenu.append(EmojiParser.parseToUnicode(":package:")).append(" ").append(order.getNumber()).append(" . Удалить трек-номер - ").append(" /remove").append(order.getId().toString()).append('\n');
+            usersOrdersMenu.append(EmojiParser.parseToUnicode(":package:"))
+                    .append(" ")
+                    .append(order.getNumber())
+                    .append(" . Удалить трек-номер - ")
+                    .append(" /remove")
+                    .append(order.getId().toString())
+                    .append('\n');
             list.add(inlineKeyboardButton);
         }
         inlineKeyboardMarkup.setKeyboard(Collections.singletonList(list));
-       getOrdersSendInlineKeyboardButtonsAndList(update,usersOrdersMenu,inlineKeyboardMarkup);
+        getOrdersSendInlineKeyboardButtonsAndList(update, usersOrdersMenu, inlineKeyboardMarkup);
     }
 
     private void sendInstruction(Update update) {
         if (update.getMessage().getText().equals("/start")) {
-            sendMsg(update.getMessage(), "Установить с помощью команды кто`/set` и через Пробел трек-номер которые ты хочешь отслеживать(они будут закреплены за вами). " + '\n' + "С Изи кпомощью команды `/orders ` вы можете получить все трек-номера ваших поссылок и отслеживать их онлайн");
+            sendMsg(update.getMessage(), "Установить с помощью команды кто `/set` и через Пробел трек-номер которые ты хочешь отслеживать(они будут закреплены за вами). " + '\n' + "С  И кпомощью команды `/orders ` вы можете получить все трек-номера ваших поссылок и отслеживать их онлайн");
         }
     }
 

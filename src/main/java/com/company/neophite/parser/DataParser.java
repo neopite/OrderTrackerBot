@@ -22,7 +22,7 @@ public class DataParser {
 
     }
 
-    public List<NodeOfPath> getFullPath(String trackNumber, Document document) {
+    public List<NodeOfPath> getFullPath(Document document) {
         List<NodeOfPath> arrayListOfPathNodes = new ArrayList<NodeOfPath>();
         Elements dateElements = document.select("div.package-route-date");
         Elements infoElements = document.select("div.package-route-info");
@@ -47,7 +47,7 @@ public class DataParser {
         return document;
     }
 
-    public OrderDetails generateOrderDetails(String trackNumber) {
+    public OrderDetails generateOrderDetails() {
         List<String> ar = getInfoAboutOrder(this.document);
         return new OrderDetails(
                  ar.get(0),      //From country
@@ -56,16 +56,16 @@ public class DataParser {
                  ar.get(3),      //Order weight
                  Integer.parseInt(ar.get(4)), //Time on the way
                  ar.get(5),      //ArrivalTime
-                 getFullPath(trackNumber, document));
+                 getFullPath( document));
     }
 
-    public StringBuilder toStringPath(OrderDetails orderDetails) {
+    public String toStringPath(OrderDetails orderDetails) {
         StringBuilder totalOrderPath = new StringBuilder();
         for (int itter = orderDetails.getPathList().size() - 1; itter > 0; itter--) {
             totalOrderPath.append(EmojiParser.parseToUnicode(":arrow_down:"));
             totalOrderPath.append(EmojiParser.parseToUnicode(":clock10:")).append(orderDetails.getPathList().get(itter).getDate()).append('\n').append(" **Нахождение**").append(orderDetails.getPathList().get(itter).getInfo()).append('\n');
         }
-        return totalOrderPath;
+        return totalOrderPath.toString();
     }
 
     public List<String> getInfoAboutOrder(Document document) {
