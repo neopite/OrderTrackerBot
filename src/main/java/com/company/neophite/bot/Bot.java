@@ -1,6 +1,5 @@
 package com.company.neophite.bot;
 
-import com.company.neophite.entity.Order;
 import com.company.neophite.entity.User;
 import com.company.neophite.parser.DataParser;
 import com.company.neophite.parser.model.OrderDetails;
@@ -15,15 +14,14 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.*;
+import java.util.ArrayList;
+
+import static com.company.neophite.bot.MessageSender.sendInstruction;
 
 
 @Component
@@ -39,14 +37,18 @@ public class Bot extends TelegramLongPollingBot {
     private UserRepo userRepo;
     private OrderRepo orderRepo;
     private UserServiceInterface userServiceInterface;
+    private BotService botService;
     private ReplyKeyboardMarkup c;
+    private MessageSender messageSender;
 
     @Autowired
-    public Bot(UserRepo userRepo, OrderRepo orderRepo, UserServiceInterface userServiceInterface , ReplyKeyboardMarkup replyKeyboardMarkup) {
+    public Bot(UserRepo userRepo, OrderRepo orderRepo, UserServiceInterface userServiceInterface, ReplyKeyboardMarkup replyKeyboardMarkup , BotService botService , MessageSender messageSender) {
         this.userRepo = userRepo;
         this.orderRepo = orderRepo;
         this.userServiceInterface = userServiceInterface;
         this.c = replyKeyboardMarkup;
+        this.botService = botService;
+        this.messageSender = messageSender;
     }
 
     @Override
@@ -63,129 +65,53 @@ public class Bot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (!update.hasCallbackQuery()) {
             if (update.getMessage().hasText()) {
-                sendInstruction(update);
+                if (update.getMessage().getText().equals("/start")) {
+                    sendInstruction(update);
+                }
                 User currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
                 if (currentUser == null) {
                     currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
                 }
                 if (update.getMessage().getText().startsWith("/orders")) {
-                    getOrders(update, currentUser);
+                    botService.getOrders(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/set")) {
-                    setOrder(update, currentUser);
+                    botService.setOrder(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/remove")) {
-                    removeOrder(update, currentUser);
+                    botService.removeOrder(update, currentUser);
                 } else {
                     if (Validator.validate(update.getMessage().getText())) {
                         DataParser dataParser = new DataParser(update.getMessage().getText());
                         OrderDetails orderDetails = dataParser.generateOrderDetails();
-                        sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails.getPathList()));
+                        MessageSender.sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails.getPathList()));
                     } else {
-                        sendErrorValiditiTrackNumber(update);
+                        MessageSender.sendErrorValiditiTrackNumber(update);
                     }
                 }
             }
         } else if (update.hasCallbackQuery()) {
-            DataParser dataParser = new DataParser(update.getCallbackQuery().getData());
+          /*  DataParser dataParser = new DataParser(update.getCallbackQuery().getData());
             OrderDetails orderDetails = dataParser.generateOrderDetails();
-            sendMsg(update.getCallbackQuery().getMessage(), dataParser.toStringPath(orderDetails.getPathList()));
-        }
-    }
+            ArrayList<KeyboardRow> keyboard = new ArrayList<>();
+            KeyboardRow first = new KeyboardRow();
+            KeyboardRow second = new KeyboardRow();
+            first.add(EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация");
+            first.add(EmojiParser.parseToUnicode(":calendar: ")+"Состояние отправки");
+            second.add(EmojiParser.parseToUnicode(":back: ")+"Назад");
+            keyboard.add(first);
+            keyboard.add(second);
+            c.setKeyboard(keyboard);
 
-    private void setOrder(Update update, User currentUser) {
-        String track = update.getMessage().getText().trim().substring(4).trim();
-        if (Validator.validate(track)) {
-            if (orderRepo.findOrderByNumber(track.toUpperCase()) != null && orderRepo.findOrderByNumber(track.toUpperCase()).getNumber().equalsIgnoreCase(track)) {
-                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":exclamation:") + track + " уже состоит в вашем профиле");
-            } else {
-                Order newOrder = new Order(track, false);
-                orderRepo.save(newOrder);
-                Set<Order> setOfOrders = currentUser.getOrders();
-                setOfOrders.add(newOrder);
-                currentUser.setOrders(setOfOrders);
-                userServiceInterface.save(currentUser);
-                sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + track + " успешно привязан за вашим аккаунтом");
+           */
+            SendMessage sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).setReplyMarkup(c).enableMarkdown(true).setText("fe");
+            try {
+                execute(sendMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
             }
-        } else {
-            sendErrorValiditiTrackNumber(update);
+
         }
     }
 
-    private void removeOrder(Update update, User currentUser) {
-        String orderId = update.getMessage().getText().trim().substring(7);
-        for (Order order : currentUser.getOrders()) {
-            if (order.getId() == Long.parseLong(orderId)) {
-                currentUser.getOrders().remove(order);
-                userServiceInterface.save(currentUser);
-                break;
-            }
-        }
-        orderRepo.deleteById(Long.parseLong(orderId));
-        sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":white_check_mark:") + " Трекинг-номер удалён!");
-    }
-
-    private void getOrders(Update update, User currentUser) {
-        if (currentUser.getOrders().isEmpty()) {
-            sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":clipboard:") + "*Трек лист* пустой!");
-            return;
-        }
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        StringBuilder usersOrdersMenu = new StringBuilder();
-        usersOrdersMenu.append(EmojiParser.parseToUnicode(":clipboard:")).append("*Трек лист* \n\n");
-        for (Order order : currentUser.getOrders()) {
-            usersOrdersMenu.append(EmojiParser.parseToUnicode(":package:"))
-                    .append(" ")
-                    .append(order.getNumber())
-                    .append(" . Удалить трек-номер - ")
-                    .append(" /remove")
-                    .append(order.getId().toString())
-                    .append('\n');
-            rowsInline.add(new ArrayList<>(
-                    Arrays.asList((new InlineKeyboardButton().setText(order.getNumber()).setCallbackData(order.getNumber().trim()))
-            )));
-        }
-        inlineKeyboardMarkup.setKeyboard(rowsInline);
-        getOrdersSendInlineKeyboardButtonsAndList(update, usersOrdersMenu, inlineKeyboardMarkup);
-    }
-
-    private void getOrdersSendInlineKeyboardButtonsAndList(Update update, StringBuilder menu, InlineKeyboardMarkup keyboardListOrders) {
-        SendMessage message = new SendMessage()
-                .setChatId(update.getMessage().getChatId())
-                .setText(menu.toString())
-                .setReplyMarkup(keyboardListOrders)
-                .enableMarkdown(true);
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void sendInstruction(Update update) {
-        if (update.getMessage().getText().equals("/start")) {
-            sendMsg(update.getMessage(), "Установить с помощью команды кто `/set` и через Пробел трек-номер которые ты хочешь отслеживать(они будут закреплены за вами). " + '\n' + "С  И кпомощью команды `/orders ` вы можете получить все трек-номера ваших поссылок и отслеживать их онлайн");
-        }
-    }
-
-    private void sendErrorValiditiTrackNumber(Update update) {
-        sendMsg(update.getMessage(), EmojiParser.parseToUnicode(":x:")
-                + " Неверный формат трек-номера "
-                + '\n'
-                + EmojiParser.parseToUnicode(":white_check_mark:") + " Коректный Формат : XX000000000XX");
-    }
-
-    private void sendMsg(Message message, String text) {
-        SendMessage mes = new SendMessage();
-        mes.enableMarkdown(true);
-        mes.setChatId(message.getChatId().toString());
-        mes.setText(text);
-        try {
-            execute(mes);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-
-    }
 
 }
 

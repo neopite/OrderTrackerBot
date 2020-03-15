@@ -16,6 +16,6 @@ public class Main {
 
     @Bean
     public ReplyKeyboardMarkup getKeyboard(){
-        return new ReplyKeyboardMarkup();
+        return new ReplyKeyboardMarkup().setSelective(true).setResizeKeyboard(true).setOneTimeKeyboard(false);
     }
 }
