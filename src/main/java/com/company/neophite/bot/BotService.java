@@ -2,6 +2,8 @@ package com.company.neophite.bot;
 
 import com.company.neophite.entity.Order;
 import com.company.neophite.entity.User;
+import com.company.neophite.parser.DataParser;
+import com.company.neophite.parser.model.OrderDetails;
 import com.company.neophite.repos.OrderRepo;
 import com.company.neophite.repos.UserRepo;
 import com.company.neophite.service.UserServiceInterface;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,5 +90,23 @@ public class BotService {
         }
         inlineKeyboardMarkup.setKeyboard(rowsInline);
         MessageSender.getInlineKeyboardButtonsAndList(update, usersOrdersMenu, inlineKeyboardMarkup);
+    }
+
+    void getAndPrintOrderPath(Update update , String trackNumber){
+        DataParser dataParser = new DataParser(trackNumber);
+        OrderDetails orderDetails = dataParser.generateOrderDetails();
+        MessageSender.sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails.getPathList()));
+    }
+
+    ArrayList<KeyboardRow> getFunctionalKeyboard(){
+        ArrayList<KeyboardRow> keyboard = new ArrayList<>();
+        KeyboardRow first = new KeyboardRow();
+        KeyboardRow second = new KeyboardRow();
+        first.add(EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация");
+        first.add(EmojiParser.parseToUnicode(":calendar: ")+"Состояние отправки");
+        second.add(EmojiParser.parseToUnicode(":back: ")+"Назад");
+        keyboard.add(first);
+        keyboard.add(second);
+        return keyboard;
     }
 }

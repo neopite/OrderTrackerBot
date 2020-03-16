@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component
@@ -44,6 +45,15 @@ class MessageSender {
             e.printStackTrace();
         }
 
+    }
+
+    static void sendKeyboard(Update update , ReplyKeyboardMarkup orderKeyboard){
+        SendMessage sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).setReplyMarkup(orderKeyboard).enableMarkdown(true).setText("Выбирете...");
+        try {
+            thisBotContext.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     static void getInlineKeyboardButtonsAndList(Update update, StringBuilder menu, InlineKeyboardMarkup keyboardListOrders) {

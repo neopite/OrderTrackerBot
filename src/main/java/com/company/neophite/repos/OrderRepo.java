@@ -10,4 +10,5 @@ import java.util.Set;
 public interface OrderRepo extends JpaRepository<Order, Long> {
     Order findOrderByNumber(String number);
     void deleteById(Long id);
+    Order findOrderById(Long id);
 }

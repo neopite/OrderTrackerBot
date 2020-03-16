@@ -59,7 +59,7 @@ public class DataParser {
 
     public String toStringPath(List<NodeOfPath> listOfPath) {
         StringBuilder totalOrderPath = new StringBuilder();
-        for (int itter = listOfPath.size()-1; itter >= 0; itter--) {
+         for (int itter = listOfPath.size()-1; itter >= 0; itter--) {
             totalOrderPath.append(EmojiParser.parseToUnicode(":arrow_down:"));
             totalOrderPath.append(EmojiParser.parseToUnicode(":clock10:")).append(listOfPath.get(itter).getDate()).append('\n').append("*Нахождение* : ").append(listOfPath.get(itter).getInfo()).append('\n');
         }

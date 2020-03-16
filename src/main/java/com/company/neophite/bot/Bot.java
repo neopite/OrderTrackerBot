@@ -1,8 +1,6 @@
 package com.company.neophite.bot;
 
 import com.company.neophite.entity.User;
-import com.company.neophite.parser.DataParser;
-import com.company.neophite.parser.model.OrderDetails;
 import com.company.neophite.repos.OrderRepo;
 import com.company.neophite.repos.UserRepo;
 import com.company.neophite.service.UserServiceInterface;
@@ -13,13 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import java.util.ArrayList;
 
 import static com.company.neophite.bot.MessageSender.sendInstruction;
 
@@ -34,19 +27,21 @@ public class Bot extends TelegramLongPollingBot {
     @Value("${bot.tok}")
     private String token;
 
+    private static String lastOrderTrack;
+
     private UserRepo userRepo;
     private OrderRepo orderRepo;
     private UserServiceInterface userServiceInterface;
     private BotService botService;
-    private ReplyKeyboardMarkup c;
+    private ReplyKeyboardMarkup orderKeyboard;
     private MessageSender messageSender;
 
     @Autowired
-    public Bot(UserRepo userRepo, OrderRepo orderRepo, UserServiceInterface userServiceInterface, ReplyKeyboardMarkup replyKeyboardMarkup , BotService botService , MessageSender messageSender) {
+    public Bot(UserRepo userRepo, OrderRepo orderRepo, UserServiceInterface userServiceInterface, ReplyKeyboardMarkup replyKeyboardMarkup, BotService botService, MessageSender messageSender) {
         this.userRepo = userRepo;
         this.orderRepo = orderRepo;
         this.userServiceInterface = userServiceInterface;
-        this.c = replyKeyboardMarkup;
+        this.orderKeyboard = replyKeyboardMarkup;
         this.botService = botService;
         this.messageSender = messageSender;
     }
@@ -63,16 +58,20 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+
         if (!update.hasCallbackQuery()) {
             if (update.getMessage().hasText()) {
-                if (update.getMessage().getText().equals("/start")) {
-                    sendInstruction(update);
-                }
                 User currentUser = userRepo.findUserByUsername(update.getMessage().getFrom().getUserName());
                 if (currentUser == null) {
                     currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
                 }
-                if (update.getMessage().getText().startsWith("/orders")) {
+                if((EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация").equalsIgnoreCase(update.getMessage().getText())){
+                    botService.getAndPrintOrderPath(update,lastOrderTrack);
+                }
+                else if (update.getMessage().getText().equals("/start")) {
+                    sendInstruction(update);
+                }
+                else if (update.getMessage().getText().startsWith("/orders")) {
                     botService.getOrders(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/set")) {
                     botService.setOrder(update, currentUser);
@@ -80,38 +79,17 @@ public class Bot extends TelegramLongPollingBot {
                     botService.removeOrder(update, currentUser);
                 } else {
                     if (Validator.validate(update.getMessage().getText())) {
-                        DataParser dataParser = new DataParser(update.getMessage().getText());
-                        OrderDetails orderDetails = dataParser.generateOrderDetails();
-                        MessageSender.sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails.getPathList()));
+                        botService.getAndPrintOrderPath(update , update.getMessage().getText());
                     } else {
                         MessageSender.sendErrorValiditiTrackNumber(update);
                     }
                 }
             }
         } else if (update.hasCallbackQuery()) {
-          /*  DataParser dataParser = new DataParser(update.getCallbackQuery().getData());
-            OrderDetails orderDetails = dataParser.generateOrderDetails();
-            ArrayList<KeyboardRow> keyboard = new ArrayList<>();
-            KeyboardRow first = new KeyboardRow();
-            KeyboardRow second = new KeyboardRow();
-            first.add(EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация");
-            first.add(EmojiParser.parseToUnicode(":calendar: ")+"Состояние отправки");
-            second.add(EmojiParser.parseToUnicode(":back: ")+"Назад");
-            keyboard.add(first);
-            keyboard.add(second);
-            c.setKeyboard(keyboard);
-
-           */
-            SendMessage sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).setReplyMarkup(c).enableMarkdown(true).setText("fe");
-            try {
-                execute(sendMessage);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-
+            lastOrderTrack = orderRepo.findOrderByNumber(update.getCallbackQuery().getData()).getNumber();
+            MessageSender.sendKeyboard(update,orderKeyboard.setKeyboard(botService.getFunctionalKeyboard()));
         }
     }
-
 
 }
 
