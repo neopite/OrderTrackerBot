@@ -1,11 +1,14 @@
 package com.company.neophite.bot;
 
 import com.company.neophite.entity.User;
+import com.company.neophite.parser.DataParser;
+import com.company.neophite.parser.model.OrderDetails;
 import com.company.neophite.repos.OrderRepo;
 import com.company.neophite.repos.UserRepo;
 import com.company.neophite.service.UserServiceInterface;
 import com.company.neophite.validation.Validator;
 import com.vdurmont.emoji.EmojiParser;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -27,7 +30,7 @@ public class Bot extends TelegramLongPollingBot {
     @Value("${bot.tok}")
     private String token;
 
-    private static String lastOrderTrack;
+    private static OrderDetails lastPage;
 
     private UserRepo userRepo;
     private OrderRepo orderRepo;
@@ -66,7 +69,7 @@ public class Bot extends TelegramLongPollingBot {
                     currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
                 }
                 if((EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация").equalsIgnoreCase(update.getMessage().getText())){
-                    botService.getAndPrintOrderPath(update,lastOrderTrack);
+                    botService.getAndPrintOrderPath(update,lastPage);
                 }
                 else if (update.getMessage().getText().equals("/start")) {
                     sendInstruction(update);
@@ -79,14 +82,15 @@ public class Bot extends TelegramLongPollingBot {
                     botService.removeOrder(update, currentUser);
                 } else {
                     if (Validator.validate(update.getMessage().getText())) {
-                        botService.getAndPrintOrderPath(update , update.getMessage().getText());
+                        lastPage = new DataParser(update.getMessage().getText()).generateOrderDetails();
+                        MessageSender.sendKeyboard(update,orderKeyboard.setKeyboard(botService.getFunctionalKeyboard()));
                     } else {
                         MessageSender.sendErrorValiditiTrackNumber(update);
                     }
                 }
             }
         } else if (update.hasCallbackQuery()) {
-            lastOrderTrack = orderRepo.findOrderByNumber(update.getCallbackQuery().getData()).getNumber();
+            lastPage = new DataParser(update.getCallbackQuery().getData()).generateOrderDetails();
             MessageSender.sendKeyboard(update,orderKeyboard.setKeyboard(botService.getFunctionalKeyboard()));
         }
     }

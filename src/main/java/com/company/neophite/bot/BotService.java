@@ -92,14 +92,14 @@ public class BotService {
         MessageSender.getInlineKeyboardButtonsAndList(update, usersOrdersMenu, inlineKeyboardMarkup);
     }
 
-    void getAndPrintOrderPath(Update update , String trackNumber){
-        DataParser dataParser = new DataParser(trackNumber);
-        OrderDetails orderDetails = dataParser.generateOrderDetails();
-        MessageSender.sendMsg(update.getMessage(), dataParser.toStringPath(orderDetails.getPathList()));
+    OrderDetails getAndPrintOrderPath(Update update,OrderDetails orderDetails){
+        MessageSender.sendMsg(update.getMessage(), new DataParser().toStringPath(orderDetails.getPathList()));
+        return orderDetails;
     }
 
     ArrayList<KeyboardRow> getFunctionalKeyboard(){
         ArrayList<KeyboardRow> keyboard = new ArrayList<>();
+        KeyboardRow zero = new KeyboardRow();
         KeyboardRow first = new KeyboardRow();
         KeyboardRow second = new KeyboardRow();
         first.add(EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация");

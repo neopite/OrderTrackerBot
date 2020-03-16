@@ -15,10 +15,10 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @Component
 class MessageSender {
 
-    private static Bot thisBotContext ;
+    private static Bot thisBotContext;
 
     @Autowired
-    public void setThisBotContext(@Lazy  Bot bot){
+    public void setThisBotContext(@Lazy Bot bot) {
         thisBotContext = bot;
     }
 
@@ -47,8 +47,13 @@ class MessageSender {
 
     }
 
-    static void sendKeyboard(Update update , ReplyKeyboardMarkup orderKeyboard){
-        SendMessage sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).setReplyMarkup(orderKeyboard).enableMarkdown(true).setText("Выбирете...");
+    static void sendKeyboard(Update update, ReplyKeyboardMarkup orderKeyboard) {
+        SendMessage sendMessage;
+        if (update.getCallbackQuery() != null) {
+            sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).setReplyMarkup(orderKeyboard).enableMarkdown(true).setText("Выбирете...");
+        } else {
+            sendMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setReplyMarkup(orderKeyboard).enableMarkdown(true).setText("Выбирете...");
+        }
         try {
             thisBotContext.execute(sendMessage);
         } catch (TelegramApiException e) {

@@ -22,6 +22,9 @@ public class DataParser {
 
     }
 
+    public DataParser() {
+    }
+
     public List<NodeOfPath> getFullPath(Document document) {
         List<NodeOfPath> arrayListOfPathNodes = new ArrayList<NodeOfPath>();
         Elements dateElements = document.select("div.package-route-date");
