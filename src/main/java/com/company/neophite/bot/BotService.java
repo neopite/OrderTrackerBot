@@ -92,21 +92,34 @@ public class BotService {
         MessageSender.getInlineKeyboardButtonsAndList(update, usersOrdersMenu, inlineKeyboardMarkup);
     }
 
-    OrderDetails getAndPrintOrderPath(Update update,OrderDetails orderDetails){
+    OrderDetails getAndPrintOrderPath(Update update, OrderDetails orderDetails) {
         MessageSender.sendMsg(update.getMessage(), new DataParser().toStringPath(orderDetails.getPathList()));
         return orderDetails;
     }
 
-    ArrayList<KeyboardRow> getFunctionalKeyboard(){
+    ArrayList<KeyboardRow> getFunctionalKeyboard(String trackNumber) {
         ArrayList<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow zero = new KeyboardRow();
         KeyboardRow first = new KeyboardRow();
         KeyboardRow second = new KeyboardRow();
-        first.add(EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация");
-        first.add(EmojiParser.parseToUnicode(":calendar: ")+"Состояние отправки");
-        second.add(EmojiParser.parseToUnicode(":back: ")+"Назад");
+        zero.add(EmojiParser.parseToUnicode(":package:") + trackNumber);
+        first.add(EmojiParser.parseToUnicode(":bar_chart:") + "Дополнительная информация");
+        first.add(EmojiParser.parseToUnicode(":calendar:") + "Состояние отправки");
+        second.add(EmojiParser.parseToUnicode(":back: ") + "Назад");
+        keyboard.add(zero);
         keyboard.add(first);
         keyboard.add(second);
         return keyboard;
+    }
+
+    void getExtraInfoAboutOrder(Update update , OrderDetails orderDetails) {
+        StringBuilder info = new StringBuilder();
+        info.append(EmojiParser.parseToUnicode(":outbox_tray:")).append(" Откуда: ").append(orderDetails.getFrom()).append('\n')
+                .append(EmojiParser.parseToUnicode(":inbox_tray:")).append("Куда : ").append(orderDetails.getTo()).append('\n')
+                .append(EmojiParser.parseToUnicode(":office:")).append("Службы(а) доставки : ").append(orderDetails.getOrderService()).append('\n')
+                .append(EmojiParser.parseToUnicode(":o:")).append("Вес : ").append(orderDetails.getWeight()).append('\n')
+                .append(EmojiParser.parseToUnicode(":hourglass:")).append("В пути : ").append(orderDetails.getOnTheWay()).append(" дней").append('\n')
+                .append(EmojiParser.parseToUnicode(":airplane_arriving:")).append("Время прибытия : ").append(orderDetails.getArrivalTime());
+        MessageSender.sendMsg(update.getMessage(),info.toString());
     }
 }

@@ -8,7 +8,6 @@ import com.company.neophite.repos.UserRepo;
 import com.company.neophite.service.UserServiceInterface;
 import com.company.neophite.validation.Validator;
 import com.vdurmont.emoji.EmojiParser;
-import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -18,7 +17,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 
 import static com.company.neophite.bot.MessageSender.sendInstruction;
-
 
 @Component
 @PropertySource("classpath:bot.properties")
@@ -68,13 +66,14 @@ public class Bot extends TelegramLongPollingBot {
                 if (currentUser == null) {
                     currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
                 }
-                if((EmojiParser.parseToUnicode(":bar_chart: ")+"Дополнительная информация").equalsIgnoreCase(update.getMessage().getText())){
-                    botService.getAndPrintOrderPath(update,lastPage);
+                if((EmojiParser.parseToUnicode(":bar_chart:") + "Дополнительная информация").equalsIgnoreCase(update.getMessage().getText())){
+                    botService.getExtraInfoAboutOrder(update,lastPage);
                 }
-                else if (update.getMessage().getText().equals("/start")) {
-                    sendInstruction(update);
-                }
-                else if (update.getMessage().getText().startsWith("/orders")) {
+                else if((EmojiParser.parseToUnicode(":calendar:") + "Состояние отправки").equalsIgnoreCase(update.getMessage().getText())) {
+                    botService.getAndPrintOrderPath(update, lastPage);
+                } else if (update.getMessage().getText().equals("/start")) {
+                    MessageSender.sendInstruction(update);
+                } else if (update.getMessage().getText().startsWith("/orders")) {
                     botService.getOrders(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/set")) {
                     botService.setOrder(update, currentUser);
@@ -83,7 +82,7 @@ public class Bot extends TelegramLongPollingBot {
                 } else {
                     if (Validator.validate(update.getMessage().getText())) {
                         lastPage = new DataParser(update.getMessage().getText()).generateOrderDetails();
-                        MessageSender.sendKeyboard(update,orderKeyboard.setKeyboard(botService.getFunctionalKeyboard()));
+                        MessageSender.sendKeyboard(update, orderKeyboard.setKeyboard(botService.getFunctionalKeyboard(update.getMessage().getText())));
                     } else {
                         MessageSender.sendErrorValiditiTrackNumber(update);
                     }
@@ -91,7 +90,7 @@ public class Bot extends TelegramLongPollingBot {
             }
         } else if (update.hasCallbackQuery()) {
             lastPage = new DataParser(update.getCallbackQuery().getData()).generateOrderDetails();
-            MessageSender.sendKeyboard(update,orderKeyboard.setKeyboard(botService.getFunctionalKeyboard()));
+            MessageSender.sendKeyboard(update, orderKeyboard.setKeyboard(botService.getFunctionalKeyboard(update.getCallbackQuery().getData())));
         }
     }
 

@@ -1,5 +1,6 @@
 package com.company.neophite.bot;
 
+import com.company.neophite.bot.Bot;
 import com.vdurmont.emoji.EmojiParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
