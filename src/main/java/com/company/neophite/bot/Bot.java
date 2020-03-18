@@ -15,8 +15,9 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import static com.company.neophite.bot.MessageSender.sendInstruction;
+import java.util.ArrayList;
 
 @Component
 @PropertySource("classpath:bot.properties")
@@ -66,10 +67,13 @@ public class Bot extends TelegramLongPollingBot {
                 if (currentUser == null) {
                     currentUser = userServiceInterface.saveUserFromMessage(update.getMessage());
                 }
-                if((EmojiParser.parseToUnicode(":bar_chart:") + "Дополнительная информация").equalsIgnoreCase(update.getMessage().getText())){
-                    botService.getExtraInfoAboutOrder(update,lastPage);
-                }
-                else if((EmojiParser.parseToUnicode(":calendar:") + "Состояние отправки").equalsIgnoreCase(update.getMessage().getText())) {
+                if ((EmojiParser.parseToUnicode(":back:")+"Выход из меню").equalsIgnoreCase(update.getMessage().getText())) {
+                    lastPage = null;
+                    orderKeyboard.setKeyboard(BotService.returnEmptyKeyboard());
+                    MessageSender.clearKeyboard(update, orderKeyboard);
+                } else if ((EmojiParser.parseToUnicode(":bar_chart:") + "Дополнительная информация").equalsIgnoreCase(update.getMessage().getText())) {
+                    botService.getExtraInfoAboutOrder(update, lastPage);
+                } else if ((EmojiParser.parseToUnicode(":calendar:") + "Состояние отправки").equalsIgnoreCase(update.getMessage().getText())) {
                     botService.getAndPrintOrderPath(update, lastPage);
                 } else if (update.getMessage().getText().equals("/start")) {
                     MessageSender.sendInstruction(update);

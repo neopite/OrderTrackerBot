@@ -11,10 +11,13 @@ import com.company.neophite.validation.Validator;
 import com.vdurmont.emoji.EmojiParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -105,14 +108,16 @@ public class BotService {
         zero.add(EmojiParser.parseToUnicode(":package:") + trackNumber);
         first.add(EmojiParser.parseToUnicode(":bar_chart:") + "Дополнительная информация");
         first.add(EmojiParser.parseToUnicode(":calendar:") + "Состояние отправки");
-        second.add(EmojiParser.parseToUnicode(":back: ") + "Назад");
+        second.add(EmojiParser.parseToUnicode(":back:") + "Выход из меню");
         keyboard.add(zero);
         keyboard.add(first);
         keyboard.add(second);
         return keyboard;
     }
 
-    void getExtraInfoAboutOrder(Update update , OrderDetails orderDetails) {
+
+
+    void getExtraInfoAboutOrder(Update update, OrderDetails orderDetails) {
         StringBuilder info = new StringBuilder();
         info.append(EmojiParser.parseToUnicode(":outbox_tray:")).append(" Откуда: ").append(orderDetails.getFrom()).append('\n')
                 .append(EmojiParser.parseToUnicode(":inbox_tray:")).append("Куда : ").append(orderDetails.getTo()).append('\n')
@@ -120,6 +125,14 @@ public class BotService {
                 .append(EmojiParser.parseToUnicode(":o:")).append("Вес : ").append(orderDetails.getWeight()).append('\n')
                 .append(EmojiParser.parseToUnicode(":hourglass:")).append("В пути : ").append(orderDetails.getOnTheWay()).append(" дней").append('\n')
                 .append(EmojiParser.parseToUnicode(":airplane_arriving:")).append("Время прибытия : ").append(orderDetails.getArrivalTime());
-        MessageSender.sendMsg(update.getMessage(),info.toString());
+        MessageSender.sendMsg(update.getMessage(), info.toString());
+    }
+
+   static ArrayList<KeyboardRow> returnEmptyKeyboard(){
+        ArrayList<KeyboardRow> emptyKeyboard = new ArrayList<>();
+        KeyboardRow keyboardButtons = new KeyboardRow();
+        keyboardButtons.add(" ");
+        emptyKeyboard.add(keyboardButtons);
+        return emptyKeyboard;
     }
 }
