@@ -33,6 +33,7 @@ public class UserService implements UserServiceInterface {
     @Override
     public User saveUserFromCallBack(CallbackQuery callbackQuery) {
         return userRepo.save(new User(
+                callbackQuery.getFrom().getId(),
                 callbackQuery.getFrom().getUserName(),
                 callbackQuery.getFrom().getFirstName(),
                 callbackQuery.getFrom().getLastName())
@@ -41,11 +42,12 @@ public class UserService implements UserServiceInterface {
 
     @Override
     public User saveUserFromMessage(Message message) {
-        return userRepo.save(new User(
-                message.getFrom().getUserName(),
-                message.getFrom().getFirstName(),
-                message.getFrom().getLastName())
-        );
+            return userRepo.save(new User(
+                    message.getFrom().getId(),
+                    message.getFrom().getUserName(),
+                    message.getFrom().getFirstName(),
+                    message.getFrom().getLastName())
+            );
     }
 }
 

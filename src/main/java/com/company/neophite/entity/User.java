@@ -7,9 +7,8 @@ import java.util.Set;
 @Table(name = "users")
 public class User {
 
-    @GeneratedValue(strategy = GenerationType.AUTO)
     @Id
-    private Long id;
+    private int id;
     private String username;
 
     @Column(name = "first_name")
@@ -21,7 +20,8 @@ public class User {
     public User() {
     }
 
-    public User(String username, String name, String surname) {
+    public User(int id,String username, String name, String surname) {
+        this.id = id;
         this.username = username;
         this.name = name;
         this.surname = surname;
@@ -56,11 +56,11 @@ public class User {
         this.orders.add(order);
     }
 
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
