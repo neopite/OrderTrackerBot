@@ -1,5 +1,7 @@
 package com.company.neophite.bot;
 
+import com.company.neophite.bot.util.KeyboardProvider;
+import com.company.neophite.bot.util.MessageSender;
 import com.company.neophite.entity.User;
 import com.company.neophite.parser.DataParser;
 import com.company.neophite.parser.model.OrderDetails;
@@ -15,9 +17,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,25 +72,25 @@ public class Bot extends TelegramLongPollingBot {
                 }
                 if ((EmojiParser.parseToUnicode(":back:")+"Выход из меню").equalsIgnoreCase(update.getMessage().getText())) {
                     usersListOfLastPages.put(update.getMessage().getFrom().getUserName(),null);
-                    orderKeyboard.setKeyboard(BotService.returnEmptyKeyboard());
-                    MessageSender.clearKeyboard(update, orderKeyboard);
+                    orderKeyboard.setKeyboard(KeyboardProvider.returnEmptyKeyboard());
+                    MessageSender.sendClearKeyboard(update, orderKeyboard);
                 } else if ((EmojiParser.parseToUnicode(":bar_chart:") + "Дополнительная информация").equalsIgnoreCase(update.getMessage().getText())) {
-                    botService.getExtraInfoAboutOrder(update, usersListOfLastPages.get(update.getMessage().getFrom().getUserName()));
+                    MessageSender.sendExtraInfoAboutOrder(update, usersListOfLastPages.get(update.getMessage().getFrom().getUserName()));
                 } else if ((EmojiParser.parseToUnicode(":calendar:") + "Состояние отправки").equalsIgnoreCase(update.getMessage().getText())) {
-                    botService.getAndPrintOrderPath(update, usersListOfLastPages.get(update.getMessage().getFrom().getUserName()));
+                    MessageSender.sendOrderPath(update, usersListOfLastPages.get(update.getMessage().getFrom().getUserName()));
                 } else if (update.getMessage().getText().equals("/start")) {
                     MessageSender.sendInstruction(update);
                 } else if (update.getMessage().getText().startsWith("/orders")) {
-                    botService.getOrders(update, currentUser);
+                    MessageSender.sendUsersOrdersList(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/set")) {
-                    botService.setOrder(update, currentUser);
+                    botService.setOrderInUsersList(update, currentUser);
                 } else if (update.getMessage().getText().startsWith("/remove")) {
-                    botService.removeOrder(update, currentUser);
+                    botService.removeOrderFromUsersList(update, currentUser);
                 } else {
                     if (Validator.validate(update.getMessage().getText())) {
                         usersListOfLastPages.put(userRepo.findUserByUsername(update.getMessage().getFrom().getUserName()).getUsername(),
                                 new DataParser(update.getMessage().getText()).generateOrderDetails());
-                        MessageSender.sendKeyboard(update, orderKeyboard.setKeyboard(botService.getFunctionalKeyboard(update.getMessage().getText())));
+                        MessageSender.sendKeyboard(update, orderKeyboard.setKeyboard(KeyboardProvider.getFunctionalKeyboard(update.getMessage().getText())));
                     } else {
                         MessageSender.sendErrorValiditiTrackNumber(update);
                     }
@@ -99,7 +99,7 @@ public class Bot extends TelegramLongPollingBot {
         } else if (update.hasCallbackQuery()) {
             usersListOfLastPages.put(userRepo.findUserByUsername(update.getCallbackQuery().getFrom().getUserName()).getUsername(),
                     new DataParser(update.getCallbackQuery().getData()).generateOrderDetails());
-            MessageSender.sendKeyboard(update, orderKeyboard.setKeyboard(botService.getFunctionalKeyboard(update.getCallbackQuery().getData())));
+            MessageSender.sendKeyboard(update, orderKeyboard.setKeyboard(KeyboardProvider.getFunctionalKeyboard(update.getCallbackQuery().getData())));
         }
     }
 
